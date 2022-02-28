@@ -35,7 +35,6 @@ public class DispatcherServer implements ApplicationRunner {
 
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
-
                             //获取到pipeline
                             ChannelPipeline pipeline = ch.pipeline();
                             //向pipeline加入解码器
@@ -53,7 +52,7 @@ public class DispatcherServer implements ApplicationRunner {
 
             //监听关闭
             channelFuture.channel().closeFuture().sync();
-        }finally {
+        } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
