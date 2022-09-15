@@ -1,6 +1,4 @@
-package com.moonflying.timekiller.core.timingwheel.timer;
-
-import com.moonflying.timekiller.core.timingwheel.task.TimerTask;
+package com.moonflying.timekiller.core.timingwheel;
 
 public interface Timer {
     void add(TimerTask timerTask);

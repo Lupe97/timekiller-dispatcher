@@ -1,14 +1,14 @@
-package com.moonflying.timekiller.core.timingwheel.task;
+package com.moonflying.timekiller.core.timingwheel;
 
 public class TimerTaskEntry implements Comparable<TimerTaskEntry> {
     volatile TimerTaskList list;
-    protected TimerTaskEntry next;
-    protected TimerTaskEntry prev;
+    TimerTaskEntry next;
+    TimerTaskEntry prev;
 
-    protected TimerTask timerTask;
-    private final Long expirationMs;
+    TimerTask timerTask;
+    final Long expirationMs;
 
-    public TimerTaskEntry(TimerTask timerTask, Long expirationMs) {
+    TimerTaskEntry(TimerTask timerTask, Long expirationMs) {
         this.timerTask = timerTask;
         this.expirationMs = expirationMs;
 
@@ -17,11 +17,11 @@ public class TimerTaskEntry implements Comparable<TimerTaskEntry> {
         }
     }
 
-    public boolean cancelled() {
+    boolean cancelled() {
         return timerTask.getTimerTaskEntry() != this;
     }
 
-    public void remove() {
+    void remove() {
         TimerTaskList currentList = list;
         while (currentList != null) {
             currentList.remove(this);

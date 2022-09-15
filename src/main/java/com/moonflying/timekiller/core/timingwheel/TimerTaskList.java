@@ -1,6 +1,4 @@
-package com.moonflying.timekiller.core.timingwheel.task;
-
-import com.moonflying.timekiller.core.timingwheel.Time;
+package com.moonflying.timekiller.core.timingwheel;
 
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -105,7 +103,7 @@ public class TimerTaskList implements Delayed {
 
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(Long.max(getExpiration() - Time.getHiresClockMs(), 0), TimeUnit.MILLISECONDS);
+        return unit.convert(Long.max(getExpiration() - TimeUnit.NANOSECONDS.toMillis(System.nanoTime()), 0), TimeUnit.MILLISECONDS);
     }
 
     @Override

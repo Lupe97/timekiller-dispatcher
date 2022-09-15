@@ -1,7 +1,7 @@
-package com.moonflying.timekiller.core.timingwheel.task;
+package com.moonflying.timekiller.core.timingwheel;
 
 public abstract class TimerTask implements Runnable{
-    protected long delayMs;
+    long delayMs;
 
     private TimerTaskEntry timerTaskEntry;
 
