@@ -74,15 +74,13 @@ public class TimerTaskList implements Delayed {
     void remove(TimerTaskEntry timerTaskEntry) {
         synchronized (this) {
             synchronized (timerTaskEntry) {
-                if (timerTaskEntry.list == null) {
-                    if (timerTaskEntry.list == this) {
-                        timerTaskEntry.next.prev = timerTaskEntry.prev;
-                        timerTaskEntry.prev.next = timerTaskEntry.next;
-                        timerTaskEntry.next = null;
-                        timerTaskEntry.prev = null;
-                        timerTaskEntry.list = null;
-                        taskCounter.decrementAndGet();
-                    }
+                if (timerTaskEntry.list == this) {
+                    timerTaskEntry.next.prev = timerTaskEntry.prev;
+                    timerTaskEntry.prev.next = timerTaskEntry.next;
+                    timerTaskEntry.next = null;
+                    timerTaskEntry.prev = null;
+                    timerTaskEntry.list = null;
+                    taskCounter.decrementAndGet();
                 }
             }
         }
@@ -93,7 +91,9 @@ public class TimerTaskList implements Delayed {
         synchronized (this) {
             TimerTaskEntry head = root.next;
             while (head != root) {
+                // 首先从当前bucket中删除该taskEntry
                 remove(head);
+                // 再通过执行SystemTimer::addTimerTaskEntry方法来决定是否将当前taskEntry降级或执行(到期任务通过SystemTimer::addTimerTaskEntry方法执行)
                 f.accept(head);
                 head = root.next;
             }

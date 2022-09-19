@@ -53,7 +53,9 @@ public class SystemTimer implements Timer {
 
     private void addTimerTaskEntry(TimerTaskEntry timerTaskEntry) {
         if (!timingWheel.add(timerTaskEntry)) {
+            // 如果添加失败，再判断这个任务是否已经取消
             if (!timerTaskEntry.cancelled()) {
+                // 如果没有取消，说明这个任务已经到期了，可以直接执行。
                 taskExecutor.submit(timerTaskEntry.timerTask);
             }
         }
@@ -62,6 +64,7 @@ public class SystemTimer implements Timer {
     @Override
     public boolean advanceClock(Long timeoutMs) {
         try {
+            // 使用优先级队列推动时间轮前进，这样的时间复杂度是O(1) {从最大堆中获得最大值的时间复杂度是O(1)}
             TimerTaskList bucket = delayQueue.poll(timeoutMs, TimeUnit.MILLISECONDS);
             if (bucket != null) {
                 writeLock.lock();
