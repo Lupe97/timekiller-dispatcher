@@ -65,6 +65,9 @@ public class SystemTimer implements Timer {
     public boolean advanceClock(Long timeoutMs) {
         try {
             // 使用优先级队列推动时间轮前进，这样的时间复杂度是O(1) {从最大堆中获得最大值的时间复杂度是O(1)}
+            // update. 上述描述并不准确。从堆中获取最大值的时间复杂度虽然是O(1),但是get完之后还需要调整堆的顺序，这个时间复杂度是O(lgN)
+            // in my view, 使用优先级队列的作用是不需要每毫秒都推进一次时间轮。试想，假如不使用优先级队列，则需要没毫秒都推进一格时间轮，
+            // however，使用优先级队列后，只需要指定一次poll的过期时间，例如200ms，则会拉取200毫秒内过期的任务来执行，缺点是降低了精度
             TimerTaskList bucket = delayQueue.poll(timeoutMs, TimeUnit.MILLISECONDS);
             if (bucket != null) {
                 writeLock.lock();
