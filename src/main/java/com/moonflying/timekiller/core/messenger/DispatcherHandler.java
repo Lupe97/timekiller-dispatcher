@@ -1,4 +1,4 @@
-package com.moonflying.timekiller.core.handler;
+package com.moonflying.timekiller.core.messenger;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

@@ -1,6 +1,6 @@
 package com.moonflying.timekiller.core;
 
-import com.moonflying.timekiller.core.handler.DispatcherHandler;
+import com.moonflying.timekiller.core.messenger.DispatcherHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
