@@ -1,6 +1,6 @@
 package com.moonflying.timekiller.core.messenger;
 
-import com.moonflying.timekiller.core.messenger.proto.ScheduledTaskMessage;
+import com.moonflying.timekiller.msgproto.ScheduledTaskMessage;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
