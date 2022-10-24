@@ -6,9 +6,9 @@ public class TimerTaskEntry implements Comparable<TimerTaskEntry> {
     TimerTaskEntry prev;
 
     TimerTask timerTask;
-    final Long expirationMs;
+    final long expirationMs;
 
-    TimerTaskEntry(TimerTask timerTask, Long expirationMs) {
+    TimerTaskEntry(TimerTask timerTask, long expirationMs) {
         this.timerTask = timerTask;
         this.expirationMs = expirationMs;
 

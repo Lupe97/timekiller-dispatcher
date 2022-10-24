@@ -1,68 +1,78 @@
 package com.moonflying.timekiller.core.engine;
 
-import com.cronutils.model.Cron;
-import com.cronutils.model.definition.CronDefinition;
-import com.cronutils.model.definition.CronDefinitionBuilder;
-import com.cronutils.model.time.ExecutionTime;
-import com.cronutils.parser.CronParser;
+import com.moonflying.timekiller.core.timingwheel.SystemTimer;
+import com.moonflying.timekiller.core.timingwheel.Timer;
+import com.moonflying.timekiller.msgproto.ScheduledTaskMessage;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.protobuf.ProtobufDecoder;
+import io.netty.handler.codec.protobuf.ProtobufEncoder;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
 
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Optional;
-import java.util.Set;
+@Component
+public class DispatcherStarter implements ApplicationRunner {
+    public static volatile boolean isRunning = true;
 
-import static com.cronutils.model.CronType.QUARTZ;
+    @Override
+    public void run(ApplicationArguments args) throws InterruptedException {
+        Timer timer = new SystemTimer("TimeKiller");
+        startCommunicator(timer);
+        work(timer);
+    }
 
-public class DispatcherStarter {
-    public static void main(String[] args) {
-        /**
-         * 解析转化方式:
-         * 1. 从executor传递的cron表达式需要带时区信息
-         * 2. 将cron表达式结合时区信息转换成long类型的时间戳
-         * 3. 该时间戳即是任务的执行时间, 设置为task的expiration
-         */
+    private void startCommunicator(Timer timer) throws InterruptedException {
+        //创建两个线程组
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        EventLoopGroup workerGroup = new NioEventLoopGroup(); //8个NioEventLoop
 
-        // Define your own cron: arbitrary fields are allowed and last field can be optional
-        CronDefinition cronDefinition =
-//                CronDefinitionBuilder.defineCron()
-//                        .withSeconds().and()
-//                        .withMinutes().and()
-//                        .withHours().and()
-//                        .withDayOfMonth()
-//                        .supportsHash().supportsL().supportsW().and()
-//                        .withMonth().and()
-//                        .withDayOfWeek()
-//                        .withIntMapping(7, 0) //we support non-standard non-zero-based numbers!
-//                        .supportsHash().supportsL().supportsW().and()
-//                        .withYear().optional().and()
-//                        .instance();
+        try {
+            ServerBootstrap b = new ServerBootstrap();
 
-        // or get a predefined instance
-        cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
+            b.group(bossGroup, workerGroup)
+                    // 使用NioSocketChannel 作为服务器的通道实现
+                    .channel(NioServerSocketChannel.class)
+                    // 设置线程队列得到连接个数
+                    .option(ChannelOption.SO_BACKLOG, 128)
+                    // 设置保持活动连接状态
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) {
+                            //获取到pipeline
+                            ChannelPipeline pipeline = ch.pipeline();
+                            //向pipeline加入解码器
+                            pipeline.addLast("decoder", new ProtobufDecoder(ScheduledTaskMessage.TaskMessage.getDefaultInstance()));
+                            //向pipeline加入编码器
+                            pipeline.addLast("encoder", new ProtobufEncoder());
+                            //加入自己的业务处理handler
+                            pipeline.addLast(new DispatcherHandler(timer));
 
-        CronParser parser = new CronParser(cronDefinition);
-        Cron quartzCron = parser.parse("0 23 * ? * 1-5 *");
+                        }
+                    });
 
-        // Get date for last execution
-        ZonedDateTime timeZone = ZonedDateTime.now(ZoneId.of("UTC"));
-        ExecutionTime executionTime = ExecutionTime.forCron(parser.parse("0 0/2 * * * ?"));
+            System.out.println("netty 服务器启动");
+            ChannelFuture channelFuture = b.bind(9999).sync();
 
-        // Get date for next execution
-        ZonedDateTime nextExecution = executionTime.nextExecution(timeZone).get();
-        LocalDateTime localDateTime = nextExecution.toLocalDateTime();
+            //监听关闭
+            channelFuture.channel().closeFuture().sync();
+        } finally {
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
 
-        Timestamp timestamp = Timestamp.valueOf(localDateTime);
-        System.out.println(localDateTime);
-        // 1665547200000 1665547200000
-        System.out.println(timestamp.getTime());
-        // get all zoneIds
-//        Set<String> zoneIds= ZoneId.getAvailableZoneIds();
-//
-//        for (String zone : zoneIds) {
-//            System.out.println(zone);
-//        }
+    private void work(Timer timer) {
+        while (isRunning) {
+            timer.advanceClock(200L);
+        }
+    }
+
+    public void stopRunning() {
+        isRunning = false;
     }
 }
