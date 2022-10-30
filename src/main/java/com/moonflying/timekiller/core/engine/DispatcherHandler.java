@@ -2,7 +2,6 @@ package com.moonflying.timekiller.core.engine;
 
 import com.moonflying.timekiller.core.task.TimeKillerTask;
 import com.moonflying.timekiller.core.timingwheel.Timer;
-import com.moonflying.timekiller.core.timingwheel.TimerTask;
 import com.moonflying.timekiller.util.TimingWheelUtils;
 import com.moonflying.timekiller.msgproto.ScheduledTaskMessage;
 import io.netty.buffer.Unpooled;
@@ -20,7 +19,7 @@ public class DispatcherHandler extends SimpleChannelInboundHandler<ScheduledTask
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ScheduledTaskMessage.TaskMessage msg) throws Exception {
-        // TODO 根据app name, 如果该app已经存在定时任务, 则立即停止执行并根据最新的信息生成最新的定时任务执行
+        // TODO 根据app name和task name, 如果该app已经存在定时任务, 则立即停止执行并根据最新的信息生成最新的定时任务执行
         // TODO 如果不存在则直接执行生成定时任务执行
         ScheduledTaskMessage.TaskMessage.DataType dataType = msg.getDataType();
         if(dataType == ScheduledTaskMessage.TaskMessage.DataType.RegisterRequest) {
@@ -33,10 +32,11 @@ public class DispatcherHandler extends SimpleChannelInboundHandler<ScheduledTask
                                     scheduledTask.getAppName(), scheduledTask.getTaskName(),
                                     scheduledTask.getZone(), scheduledTask.getCorn(), expirationMs, this.timer
                             ));
+                            // 将channel与appname进行映射并保存
+                            TimeKillerTask.appChannelMapping.put(scheduledTask.getAppName(), ctx.channel());
                         }
                     }
             );
-            // TODO 将channel与appname进行映射并保存
         } else if(dataType == ScheduledTaskMessage.TaskMessage.DataType.ExecuteScheduledTaskResponse) {
             // 根据响应结果对任务进行下一步处理（重试或者丢弃...）
             ScheduledTaskMessage.ExecuteScheduledTaskResponse response = msg.getExecuteResponse();
